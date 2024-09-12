@@ -60,7 +60,7 @@ function paymentMenu() {
 }
 
 function detailMenu() {
-  console.log("1. Ajouter une commande");
+  console.log("1. Ajouter une detail commande");
   console.log("2. Sauvegarder les commandes et quitter");
   console.log(" 3. Quitter sans sauvegarder");
   const choice = readlineSync.question("Votre choix: ");

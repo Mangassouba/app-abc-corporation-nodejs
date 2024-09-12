@@ -71,7 +71,7 @@ async function destroyOrder(id) {
     );
 
     if (rows.length === 0) {
-      throw new Error(`La commande avec l'ID ${id} n'existe pas`);
+      console.log(`La commande avec l'ID ${id} n'existe pas`);
     }
     const result = await connection.execute(
       "DELETE FROM purchase_orders WHERE id = ?",
@@ -94,7 +94,7 @@ async function updateOrderDetails(quantity, price, produit_id, order_id) {
     );
 
     if (rows.length === 0) {
-      throw new Error(`La commande avec l'ID ${id} n'existe pas`);
+      console.log(`La commande avec l'ID ${id} n'existe pas`);
     }
     const result = await connection.execute(
       "UPDATE order_details  SET  quantity = ?,price,produit_id = ?,order_id = ? WHERE id = ?",
@@ -108,12 +108,12 @@ async function updateOrderDetails(quantity, price, produit_id, order_id) {
   }
 }
 
-async function addOrderDetails(quantity, price, produit_id, order_id) {
+async function addOrderDetails(quantity, price, product_id, order_id) {
   const connection = await pool.getConnection();
   try {
     const result = await connection.execute(
-      "INSERT INTO order_details (quantity,price,produit_id,order_id) VALUES (?, ?, ?, ?)",
-      [quantity, price, produit_id, order_id]
+      "INSERT INTO order_details (quantity,price,product_id,order_id) VALUES (?, ?, ?, ?)",
+      [quantity, price, product_id, order_id]
     );
     return result;
   } catch (error) {
