@@ -18,14 +18,14 @@ async function addProduct(
   price,
   stock,
   category,
-  borcode,
+  barcode,
   status
 ) {
   const connection = await pool.getConnection();
   try {
     const [result] = await connection.execute(
-      "INSERT INTO products (name,description,price,stock,category,borcode,status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [name, description, price, stock, category, borcode, status]
+      "INSERT INTO products (name,description,price,stock,category,barcode,status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [name, description, price, stock, category, barcode, status]
     );
     return result.insertId;
   } catch (error) {}
@@ -38,7 +38,7 @@ async function updateProduct(
   price,
   stock,
   category,
-  borcode,
+  barcode,
   status
 ) {
   const connection = await pool.getConnection();
@@ -49,15 +49,16 @@ async function updateProduct(
     );
 
     if (rows.length === 0) {
-      throw new Error(`Le produit avec l'ID ${id} n'existe pas`);
-    }
-    const [result] = await connection.execute(
-      "UPDATE products SET name=?,description=?,price=?,stock=?,category=?,borcode=?,status=? where id = ?",
-      [name, description, price, stock, category, borcode, status, id]
-    );
-    console.log("mis a jours");
+      console.log(`Le produit avec l'ID ${id} n'existe pas`);
+    } else {
+      const [result] = await connection.execute(
+        "UPDATE products SET name=?,description=?,price=?,stock=?,category=?,barcode=?,status=? where id = ?",
+        [name, description, price, stock, category, barcode, status, id]
+      );
+      console.log("mis a jours");
 
-    return result.insertId;
+      return result.insertId;
+    }
   } catch (error) {}
 }
 
@@ -72,18 +73,18 @@ async function destroyProduct(id) {
     );
 
     if (rows.length === 0) {
-      throw new Error(`Le produit avec l'ID ${id} n'existe pas`);
+      console.log(`Le produit avec l'ID ${id} n'existe pas`);
+    } else {
+      const result = await connection.execute(
+        "DELETE FROM products where id = ?",
+        [id]
+      );
+      console.log("produit supprimer");
+      return result;
     }
-
-    const result = await connection.execute(
-      "DELETE FROM products where id = ?",
-      [id]
-    );
-    console.log("produit supprimer");
-    return result;
   } catch (error) {
     if (error.code && error.code === "ER_ROW_IS_REFERENCED_2") {
-      throw new Error(`Deletion error ${id}`);
+      console.log(`Erreur de suppression ${id}`);
     }
     throw error;
   } finally {

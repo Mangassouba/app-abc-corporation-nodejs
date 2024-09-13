@@ -179,7 +179,7 @@ async function main() {
                   borcodes,
                   statu
                 );
-                console.log("update succe");
+                
                 break;
               case "4":
                 idp = readlineSync.questionInt("Supprimer un produits: ");
