@@ -33,15 +33,23 @@ async function updateCustomer(id, name, address, email, phone) {
 
     if (rows.length === 0) {
       console.log(`Le client avec l'ID ${id} n'existe pas`);
-    }
-    const [result] = await connection.execute(
-      "UPDATE customers SET name=?,address=?,email=?,phone=?, where id = ?",
-      [name, address, email, phone, id]
-    );
-    console.log("mis a jours");
-
+    } else {
+      const [result] = await connection.execute(
+        "UPDATE customers SET name=?,address=?,email=?,phone=?, where id = ?",
+        [name, address, email, phone, id]
+      );
+      console.log("mis a jours avec succés");
+      
     return result.insertId;
-  } catch (error) {}
+    }
+  } catch (error) {
+    if (error.code && error.code === "ER_ROW_IS_REFERENCED_2") {
+      console.log(`Erreur de suppression ${id}`);
+    }
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function destroyCustomer(id) {
@@ -56,17 +64,17 @@ async function destroyCustomer(id) {
 
     if (rows.length === 0) {
       console.log(`Le client avec l'ID ${id} n'existe pas`);
+    } else {
+      const result = await connection.execute(
+        "DELETE FROM customers where id = ?",
+        [id]
+      );
+      console.log("Client supprimer");
+      return result;
     }
-
-    const result = await connection.execute(
-      "DELETE FROM customers where id = ?",
-      [id]
-    );
-    console.log("custpmers supprimer");
-    return result;
   } catch (error) {
     if (error.code && error.code === "ER_ROW_IS_REFERENCED_2") {
-      throw new Error(`Deletion error ${id}`);
+      console.log(`Erreur de suppression ${id}`);
     }
     throw error;
   } finally {
