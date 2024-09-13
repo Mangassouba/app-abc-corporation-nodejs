@@ -51,6 +51,26 @@ async function updateOrder(
   }
 }
 
+
+async function getOrderDetailsByOrderId(orderId) {
+  const connection = await pool.getConnection();
+  const result = await connection.execute(
+      "SELECT * FROM order_details WHERE order_id = ?",
+      [orderId]
+  );
+  return result; 
+}
+
+async function updateOrderDetail(detailId, quantity, price) {
+  const connection = await pool.getConnection();
+  const result = await connection.execute(
+      "UPDATE order_details SET quantity = ?, price = ? WHERE id = ?",
+      [quantity, price, detailId]
+  );
+  return result.affectedRows;
+}
+
+
 async function getOrderById(id) {
   const connection = await pool.getConnection();
   try {
@@ -130,4 +150,6 @@ module.exports = {
   destroyOrder,
   updateOrderDetails,
   getOrderById,
+  getOrderDetailsByOrderId,
+  updateOrderDetail
 };

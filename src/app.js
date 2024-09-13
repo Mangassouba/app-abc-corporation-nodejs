@@ -62,7 +62,7 @@ function paymentMenu() {
 function detailMenu() {
   console.log("1. Ajouter une detail commande");
   console.log("2. Sauvegarder les commandes et quitter");
-  console.log(" 3. Quitter sans sauvegarder");
+  console.log("3. Quitter sans sauvegarder");
   const choice = readlineSync.question("Votre choix: ");
   return choice;
 }
@@ -78,59 +78,6 @@ async function main() {
             switch (customerChoice) {
               case "1":
                 const name = readlineSync.question("Entrez le nom : ");
-                // const orderDetail = [];
-
-                // let add = true; 
-
-                // while (add) {
-                //   const choix = detailMenu(); 
-
-                //   switch (choix) {
-                //     case "1":
-                //       const quantity = readlineSync.questionInt(
-                //         "Entrez une quantité: "
-                //       );
-                //       const price =
-                //         readlineSync.questionFloat("Entrez le prix: ");
-                //       const produit_id = readlineSync.questionInt(
-                //         "Entrez l'ID du produit: "
-                //       );
-                //       const order_id = readlineSync.questionInt(
-                //         "Entrez l'ID de la commande: "
-                //       );
-
-                //       orderDetail.push({
-                //         quantity,
-                //         price,
-                //         produit_id,
-                //         order_id,
-                //       });
-                //       break;
-
-                //     case "2":
-                //       for (let i = 0; i < orderDetail.length; i++) {
-                //         const detail = orderDetail[i];
-                //         await orderModule.addOrderDetails(
-                //           detail.quantity,
-                //           detail.price,
-                //           detail.produit_id,
-                //           detail.order_id
-                //         );
-                //       }
-                //       console.log("Les commandes ont été enregistrées.");
-                //       add = false; 
-                //       break;
-
-                //     case "3":
-                //       console.log("Vous avez quitté sans sauvegarder.");
-                //       add = false; 
-                //       break;
-
-                //     default:
-                //       console.log("Option invalide, veuillez réessayer.");
-                //       break;
-                //   }
-                // }
                 const address = readlineSync.question(
                   "Entrez votre address : "
                 );
@@ -169,7 +116,6 @@ async function main() {
                 const deleteResult = await customerModule.destroyCustomer(
                   deleteId
                 );
-                console.log(`Number of rows deleted: ${deleteResult}`);
                 break;
               default:
                 console.log("Invalid option");
@@ -314,7 +260,9 @@ async function main() {
                         trackNumber,
                         orderStatus
                       );
-                      console.log(`Commande d'achat ajoutée avec l'ID: ${orderId}`);
+                      console.log(
+                        `Commande d'achat ajoutée avec l'ID: ${orderId}`
+                      );
 
                       for (let i = 0; i < orderDetail.length; i++) {
                         const detail = orderDetail[i];
@@ -368,9 +316,44 @@ async function main() {
                   newOrderStatus
                 );
                 console.log(`Number of rows updated: ${updateOrderResult}`);
+
+                const [currentDetails] =
+                  await orderModule.getOrderDetailsByOrderId(updateOrderId);
+                console.table(currentDetails);
+
+                let modifyDetails = readlineSync.question(
+                  "Souhaitez-vous modifier les détails de la commande? (y/n): "
+                );
+
+                if (modifyDetails.toLowerCase() === "y") {
+                  for (let i = 0; i < currentDetails.length; i++) {
+                    const detail = currentDetails[i];
+                    console.log(
+                      `Modification du détail de la commande ID: ${detail.id}`
+                    );
+
+                    const newQuantity =
+                      readlineSync.questionInt(
+                        `Quantité actuelle (${detail.quantity}): Entrez une nouvelle quantite ou appuyez sur Entree pour garder la même: `
+                      ) || detail.quantity;
+
+                    const newPrice =
+                      readlineSync.questionFloat(
+                        `Prix actuel (${detail.price}): Entrez un nouveau prix ou appuyez sur Entrée pour garder le même: `
+                      ) || detail.price;
+
+                    await orderModule.updateOrderDetail(
+                      detail.id,
+                      newQuantity,
+                      newPrice
+                    );
+                    console.log(
+                      `Détail de commande ID ${detail.id} mis à jour.`
+                    );
+                  }
+                }
                 break;
               case "3":
-
                 const orderid = readlineSync.questionInt(
                   "Entrez l'id du commande a lister: "
                 );
@@ -378,12 +361,12 @@ async function main() {
                 console.table(listId);
 
                 break;
-                case "4":
-                  const deOorderid = readlineSync.questionInt(
-                    "Entrez l'id du commande a supprimer: "
-                  );
-                   await orderModule.destroyOrder(deOorderid);
-                  break;
+              case "4":
+                const deOorderid = readlineSync.questionInt(
+                  "Entrez l'id du commande a supprimer: "
+                );
+                await orderModule.destroyOrder(deOorderid);
+                break;
               default:
                 console.log("Option invalide");
                 break;
@@ -400,7 +383,9 @@ async function main() {
                 const paymentDate = readlineSync.question(
                   "Entrez la date de paiement (YYYY-MM-DD): "
                 );
-                const amount = readlineSync.questionFloat("Entrez le montant: ");
+                const amount = readlineSync.questionFloat(
+                  "Entrez le montant: "
+                );
                 const paymentMethod = readlineSync.question(
                   "Entrez le mode de paiement: "
                 );
@@ -443,7 +428,9 @@ async function main() {
                   newPaymentMethod,
                   newOrderId
                 );
-                console.log(`Nombre de lignes mises à jour: ${updatePaymentResult}`);
+                console.log(
+                  `Nombre de lignes mises à jour: ${updatePaymentResult}`
+                );
                 break;
               case "4":
                 const deletePaymentId = readlineSync.questionInt(
@@ -452,7 +439,9 @@ async function main() {
                 const deletePaymentResult = await paymentModule.destroyPayment(
                   deletePaymentId
                 );
-                console.log(`Nombre de lignes supprimées: ${deletePaymentResult}`);
+                console.log(
+                  `Nombre de lignes supprimées: ${deletePaymentResult}`
+                );
                 break;
               default:
                 console.log("Option invalide");
