@@ -35,7 +35,7 @@ async function updateCustomer(id, name, address, email, phone) {
       console.log(`Le client avec l'ID ${id} n'existe pas`);
     } else {
       const [result] = await connection.execute(
-        "UPDATE customers SET name=?,address=?,email=?,phone=?, where id = ?",
+        "UPDATE customers SET name=?,address=?,email=?,phone=? where id = ?",
         [name, address, email, phone, id]
       );
       console.log("mis a jours avec succés");

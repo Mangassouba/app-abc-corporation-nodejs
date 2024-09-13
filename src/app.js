@@ -93,7 +93,7 @@ async function main() {
                 console.log(list);
                 break;
               case "3":
-                const id = readlineSync.question("Entrez id : ");
+                const id = readlineSync.questionInt("Entrez id : ");
                 const namen = readlineSync.question("Entrez le nom : ");
                 const addres = readlineSync.question("Entrez votre address : ");
                 const emails = readlineSync.question("Entrez votre email : ");
