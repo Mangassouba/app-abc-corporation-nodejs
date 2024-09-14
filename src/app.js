@@ -86,7 +86,6 @@ async function main() {
                   "Entre votre numero de telephone : "
                 );
                 await customerModule.addCustomer(name, address, email, phone);
-                console.log("client ajouté avec succès !");
                 break;
               case "2":
                 const list = await customerModule.get();
