@@ -5,7 +5,7 @@
 
 
 ABC corporation est une entreprise specialisée dans l'importation et exportation de produit. lors de la premiers phase du projet, j'ai modelisé avec succés leur fichier Excel en une base de donnée relationnelle.
-dans cette nouvelle phase l'entreprise fais appel moi pour ajouter de nouvelle fonctionalité gestion de paiement des commandes et developper une application node.js pour gérer les opérations CRUD sur toutes les tables.
+dans cette nouvelle phase, l'entreprise fais appel moi pour ajouter de nouvelle fonctionalité gestion de paiement des commandes et developper une application(order_management) avec node.js pour gérer les opérations CRUD sur toutes les tables.
 
 ## Prérequis
 

@@ -18,7 +18,7 @@ async function addPayment(date, amount, payment_method, order_id) {
   try {
 
     const [idOrder] = await connection.execute(
-      "SELECT order_id FROM purchase_orders  WHERE id = ?",
+      "SELECT id FROM purchase_orders  WHERE id = ?",
       [order_id]
     );
 
@@ -31,7 +31,8 @@ async function addPayment(date, amount, payment_method, order_id) {
         "INSERT INTO payments (date, amount, payment_method, order_id) values (?, ?, ?, ?)",
         [date, amount, payment_method, order_id]
       );
-      return result.insertId;
+      
+      console.log(`Paiement ajouté avec l'ID: ${result.insertId}`);
     }
    
   } catch (error) {
@@ -49,7 +50,7 @@ async function updatePayment(id,date, amount, payment_method, order_id) {
     );
     
     if (rows.length === 0) {
-      console.log(`Le paiement avec l'ID ${id} n'existe pas`);
+      console.log(`La mise a jour de paiement avec l'ID ${id} n'existe pas`);
     }
 
     const [result] = await connection.execute(

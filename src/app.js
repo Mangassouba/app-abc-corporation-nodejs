@@ -383,7 +383,6 @@ async function main() {
                   paymentMethod,
                   paymentOrderId
                 );
-                console.log(`Paiement ajouté avec l'ID: ${paymentId}`);
                 break;
               case "2":
                 const payments = await paymentModule.get();
