@@ -9,13 +9,25 @@ async function addOrder(
 ) {
   const connection = await pool.getConnection();
   try {
-    const result = await connection.execute(
-      "INSERT INTO purchase_orders (date, delivery_address , customer_id , track_number,status) VALUES (?, ?, ?, ?, ?)",
-      [date, delivery_address, customer_id, track_number, status]
+
+    const [trackRows] = await connection.execute(
+      "SELECT track_number  FROM purcharses_orders WHERE track_number = ?",
+      [track_number]
     );
-    return result;
+    if (trackRows.length > 0) {
+      console.log(
+        "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
+      );
+    }else {
+      const result = await connection.execute(
+        "INSERT INTO purchase_orders (date, delivery_address , customer_id , track_number,status) VALUES (?, ?, ?, ?, ?)",
+        [date, delivery_address, customer_id, track_number, status]
+      );
+      return result;
+    }
+   
   } catch (error) {
-    throw error;
+    throw error.message;
   } finally {
     connection.release();
   }
@@ -35,15 +47,26 @@ async function updateOrder(
       "SELECT id FROM purchase_orders WHERE id = ?",
       [id]
     );
-
-    if (rows.length === 0) {
-      throw new Error(`La commande avec l'ID ${id} n'existe pas`);
-    }
-    const result = await connection.execute(
-      "UPDATE purchase_orders SET date = ?, delivery_address = ? , customer_id = ? , track_number = ?, status = ? WHERE id = ?",
-      [date, delivery_address, customer_id, track_number, status, id]
+    const [trackRows] = await connection.execute(
+      "SELECT track_number  FROM purcharses_orders WHERE track_number = ?",
+      [track_number]
     );
-    return result;
+   
+    if (rows.length === 0) {
+      console.log(`La commande avec l'ID ${id} n'existe pas`);
+    }else  if (trackRows.length > 0) {
+      console.log(
+        "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
+      );
+    }else {
+      const result = await connection.execute(
+        "UPDATE purchase_orders SET date = ?, delivery_address = ? , customer_id = ? , track_number = ?, status = ? WHERE id = ?",
+        [date, delivery_address, customer_id, track_number, status, id]
+      );
+      return result;
+    }
+
+    
   } catch (error) {
     throw error;
   } finally {
@@ -139,7 +162,7 @@ async function addOrderDetails(quantity, price, product_id, order_id) {
   } catch (error) {
     throw error;
   } finally {
-    // connection.release();
+    connection.release();
   }
 }
 
