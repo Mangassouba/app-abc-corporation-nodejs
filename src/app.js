@@ -106,7 +106,6 @@ async function main() {
                   emails,
                   phonee
                 );
-                // console.log("client ajouté avec succès !");
                 break;
               case "4":
                 const deleteId = readlineSync.questionInt(
@@ -181,7 +180,6 @@ async function main() {
                 break;
               case "4":
                 idp = readlineSync.questionInt("Supprimer un produits: ");
-                // console.log(idp);
 
                 await productModule.destroyProduct(idp);
                 break;
@@ -198,7 +196,7 @@ async function main() {
           while (purchaseChoice !== "0") {
             switch (purchaseChoice) {
               case "1":
-                const order = [];
+                let orderId;
                 const orderDate = readlineSync.question(
                   "Entrez la date de commande (YYYY-MM-DD): "
                 );
@@ -214,13 +212,6 @@ async function main() {
                 const orderStatus = readlineSync.question(
                   "Entrez le statut de la commande: "
                 );
-                order.push({
-                  orderDate,
-                  deliveryAddress,
-                  customerId,
-                  trackNumber,
-                  orderStatus,
-                });
                 const orderDetail = [];
 
                 let add = true;
@@ -230,28 +221,24 @@ async function main() {
 
                   switch (choix) {
                     case "1":
+                      const produit_id = readlineSync.questionInt(
+                        "Entrez l'ID du produit: "
+                      );
                       const quantity = readlineSync.questionInt(
                         "Entrez une quantité: "
                       );
                       const price =
                         readlineSync.questionFloat("Entrez le prix: ");
-                      const produit_id = readlineSync.questionInt(
-                        "Entrez l'ID du produit: "
-                      );
-                      const order_id = readlineSync.questionInt(
-                        "Entrez l'ID de la commande: "
-                      );
-
+                      
                       orderDetail.push({
                         quantity,
                         price,
                         produit_id,
-                        order_id,
                       });
                       break;
 
                     case "2":
-                      const orderId = await orderModule.addOrder(
+                      orderId = await orderModule.addOrder(
                         orderDate,
                         deliveryAddress,
                         customerId,
@@ -268,7 +255,7 @@ async function main() {
                           detail.quantity,
                           detail.price,
                           detail.produit_id,
-                          detail.order_id
+                          orderId
                         );
                       }
                       console.log("Les commandes ont été enregistrées.");
@@ -356,7 +343,7 @@ async function main() {
                   "Entrez l'id du commande a lister: "
                 );
                 const listId = await orderModule.getOrderById(orderid);
-                console.table(listId);
+                // console.table(listId);
 
                 break;
               case "4":

@@ -19,15 +19,31 @@ async function addOrder(
         "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
       );
     }else {
-      const result = await connection.execute(
+      const [orderId] = await connection.execute(
         "INSERT INTO purchase_orders (date, delivery_address , customer_id , track_number,status) VALUES (?, ?, ?, ?, ?)",
         [date, delivery_address, customer_id, track_number, status]
       );
-      return result;
+      return orderId.insertId;
     }
    
   } catch (error) {
     throw error.message;
+  } finally {
+    connection.release();
+  }
+}
+
+async function addOrderDetails(quantity, price, product_id, order_id) {
+  const connection = await pool.getConnection();
+  try {
+    
+    const result = await connection.execute(
+      "INSERT INTO order_details (quantity,price,product_id,order_id) VALUES (?, ?, ?, ?)",
+      [quantity, price, product_id, order_id]
+    );
+    return result;
+  } catch (error) {
+    throw error;
   } finally {
     connection.release();
   }
@@ -101,8 +117,16 @@ async function getOrderById(id) {
       "SELECT * FROM purchase_orders INNER JOIN order_details ON purchase_orders.id = order_details.order_id WHERE purchase_orders.id = ?",
       [id]
     );
-    return result;
-  } catch (error) {}
+    if(result.length ===0){
+      console.log(`La commande avec id ${id} n'existe pas`);
+    }else{
+      console.table(result) ;
+    }
+  } catch (error) {
+    throw error.message;
+  }finally{
+    connection.release();
+  }
 }
 
 async function destroyOrder(id) {
@@ -147,24 +171,11 @@ async function updateOrderDetails(quantity, price, produit_id, order_id) {
   } catch (error) {
     throw error;
   } finally {
-    // connection.release();
-  }
-}
-
-async function addOrderDetails(quantity, price, product_id, order_id) {
-  const connection = await pool.getConnection();
-  try {
-    const result = await connection.execute(
-      "INSERT INTO order_details (quantity,price,product_id,order_id) VALUES (?, ?, ?, ?)",
-      [quantity, price, product_id, order_id]
-    );
-    return result;
-  } catch (error) {
-    throw error;
-  } finally {
     connection.release();
   }
 }
+
+
 
 module.exports = {
   addOrderDetails,

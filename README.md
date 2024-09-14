@@ -1,5 +1,5 @@
 
-# Application CRUD pour ABC Corporation
+# Application order_management
 
 ## Description
 
@@ -18,11 +18,11 @@ Pour la prise en main correcte de l'application, il est nécessaire d'avoir inst
 
 - Clonez le repository :
 
-       git clone https://github.com/Mangassouba/app-abc-corporation-nodejs.git
+       git clone https://github.com/Mangassouba/order_management.git
  
 - Accédez au dossier du projet
 
-        cd app-abc-corporation-nodejs
+        cd order_management
 
 - Installez les dépendances :
 
