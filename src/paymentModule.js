@@ -16,11 +16,24 @@ async function addPayment(date, amount, payment_method, order_id) {
   
   console.log("ajoute client")
   try {
-    const [result] = await connection.execute(
-      "INSERT INTO payments (date, amount, payment_method, order_id) values (?, ?, ?, ?)",
-      [date, amount, payment_method, order_id]
+
+    const [idOrder] = await connection.execute(
+      "SELECT order_id FROM purchase_orders  WHERE id = ?",
+      [order_id]
     );
-    return result.insertId;
+
+    if (idOrder.length == 0) {
+      console.log(
+        "Vous ne pouvez pas attribuer un paiement à une commande qui n'existe pas."
+      );
+    }else{
+      const [result] = await connection.execute(
+        "INSERT INTO payments (date, amount, payment_method, order_id) values (?, ?, ?, ?)",
+        [date, amount, payment_method, order_id]
+      );
+      return result.insertId;
+    }
+   
   } catch (error) {
     throw error;
   } finally {
@@ -36,7 +49,7 @@ async function updatePayment(id,date, amount, payment_method, order_id) {
     );
     
     if (rows.length === 0) {
-      throw new Error(`Le paiement avec l'ID ${id} n'existe pas`);
+      console.log(`Le paiement avec l'ID ${id} n'existe pas`);
     }
 
     const [result] = await connection.execute(
@@ -59,7 +72,7 @@ async function destroyPayment(id) {
     );
 
     if (rows.length === 0) {
-      throw new Error(`Le paiement avec l'ID ${id} n'existe pas`);
+      console.log(`Le paiement avec l'ID ${id} n'existe pas`);
     }
 
     const [result] = await connection.execute(
@@ -68,10 +81,7 @@ async function destroyPayment(id) {
     );
     return result.affectedRows;
   } catch (error) {
-    if (error.code && error.code === "ER_ROW_IS_REFERENCED_2") {
-      throw new Error(`Deletion error ${id}`);
-    }
-    throw error;
+    throw error.message;
   } finally {
     connection.release();
   }

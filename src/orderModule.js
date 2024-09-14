@@ -11,7 +11,7 @@ async function addOrder(
   try {
 
     const [trackRows] = await connection.execute(
-      "SELECT track_number  FROM purcharses_orders WHERE track_number = ?",
+      "SELECT track_number  FROM purchase_orders  WHERE track_number = ?",
       [track_number]
     );
     if (trackRows.length > 0) {
@@ -48,7 +48,7 @@ async function updateOrder(
       [id]
     );
     const [trackRows] = await connection.execute(
-      "SELECT track_number  FROM purcharses_orders WHERE track_number = ?",
+      "SELECT track_number  FROM purchase_orders  WHERE track_number = ?",
       [track_number]
     );
    
