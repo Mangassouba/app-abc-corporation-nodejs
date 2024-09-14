@@ -23,12 +23,30 @@ async function addProduct(
 ) {
   const connection = await pool.getConnection();
   try {
-    const [result] = await connection.execute(
-      "INSERT INTO products (name,description,price,stock,category,barcode,status) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [name, description, price, stock, category, barcode, status]
+    const [barcodeRows] = await connection.execute(
+      "SELECT barcode  FROM products WHERE barcode = ?",
+      [barcode]
     );
-    return result.insertId;
-  } catch (error) {}
+
+    if (barcodeRows.length > 0) {
+      console.log(
+        "Vous ne pouvez pas attribuer une code bar sur deux produit"
+      );
+    } else{
+      const [result] = await connection.execute(
+        "INSERT INTO products (name,description,price,stock,category,barcode,status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [name, description, price, stock, category, barcode, status]
+      );
+      
+      console.log("produits ajouter avec succés");
+      return result.insertId;
+    }
+   
+  } catch (error) {
+    throw error.message;
+  }finally{
+    connection.release();
+  }
 }
 
 async function updateProduct(
@@ -47,9 +65,17 @@ async function updateProduct(
       "SELECT id FROM products WHERE id = ?",
       [id]
     );
+    const [barcodeRows] = await connection.execute(
+      "SELECT barcode  FROM products WHERE barcode = ? AND id != ?",
+      [barcode,id]
+    );
 
     if (rows.length === 0) {
       console.log(`Le produit avec l'ID ${id} n'existe pas`);
+    }else if (barcodeRows.length > 0) {
+      console.log(
+        "Vous ne pouvez pas attribuer une code bar sur deux produit"
+      );
     } else {
       const [result] = await connection.execute(
         "UPDATE products SET name=?,description=?,price=?,stock=?,category=?,barcode=?,status=? where id = ?",
@@ -59,7 +85,11 @@ async function updateProduct(
 
       return result.insertId;
     }
-  } catch (error) {}
+  } catch (error) {
+    throw error.message;
+  }finally{
+    connection.release();
+  }
 }
 
 async function destroyProduct(id) {
@@ -83,10 +113,7 @@ async function destroyProduct(id) {
       return result;
     }
   } catch (error) {
-    if (error.code && error.code === "ER_ROW_IS_REFERENCED_2") {
-      console.log(`Erreur de suppression ${id}`);
-    }
-    throw error;
+    throw error.message;
   } finally {
     connection.release();
   }

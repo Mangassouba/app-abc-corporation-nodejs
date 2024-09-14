@@ -138,7 +138,7 @@ async function main() {
                 const price = readlineSync.questionFloat("Entrez le prix : ");
                 const stock = readlineSync.questionInt("Entre stock : ");
                 const category = readlineSync.question("Entre la categorie: ");
-                const borcode = readlineSync.question("Entre la bar code: ");
+                const borcode = readlineSync.question("Entre la barcode: ");
                 const status = readlineSync.question("Entre le status : ");
                 await productModule.addProduct(
                   nameProduct,
@@ -149,7 +149,6 @@ async function main() {
                   borcode,
                   status
                 );
-                console.log("produits ajouter avec succés");
                 break;
               case "2":
                 const list = await productModule.get();
