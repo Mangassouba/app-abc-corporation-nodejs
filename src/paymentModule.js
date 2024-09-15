@@ -48,16 +48,23 @@ async function updatePayment(id,date, amount, payment_method, order_id) {
       "SELECT id FROM payments WHERE id = ?",
       [id]
     );
+    const [idOrder] = await connection.execute(
+      "SELECT COUNT(*) AS count FROM purchase_orders WHERE id = ?",
+      [order_id]
+    );
     
     if (rows.length === 0) {
       console.log(`La mise a jour de paiement avec l'ID ${id} n'existe pas`);
+    }else if(idOrder.length == 0){
+      console.log("Vous ne pouvez pas associer un paiement à une commande inexistante.")
+    }else{
+      const [result] = await connection.execute(
+        "UPDATE payments SET date = ?, amount = ?, payment_method = ?, order_id = ? WHERE id = ?",
+        [date, amount, payment_method, order_id, id]
+      );
+      return result.affectedRows;
     }
 
-    const [result] = await connection.execute(
-      "UPDATE payments SET date = ?, amount = ?, payment_method = ?, order_id = ? WHERE id = ?",
-      [date, amount, payment_method, order_id, id]
-    );
-    return result.affectedRows;
   } catch (error) {
     throw error;
   } finally {

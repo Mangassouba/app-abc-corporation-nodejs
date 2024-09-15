@@ -14,11 +14,19 @@ async function addOrder(
       "SELECT track_number  FROM purchase_orders  WHERE track_number = ?",
       [track_number]
     );
+    const [idCustomer] = await connection.execute(
+      "SELECT COUNT(*) AS count FROM customers WHERE id = ?",
+      [customer_id]
+    );
     if (trackRows.length > 0) {
       console.log(
         "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
       );
-    }else {
+    }else if (idCustomer[0].count == 0) {
+      console.log(
+        "\nYou cannot associate an order with a customer that does not exist\n"
+      );
+    } else {
       const [orderId] = await connection.execute(
         "INSERT INTO purchase_orders (date, delivery_address , customer_id , track_number,status) VALUES (?, ?, ?, ?, ?)",
         [date, delivery_address, customer_id, track_number, status]
@@ -36,14 +44,24 @@ async function addOrder(
 async function addOrderDetails(quantity, price, product_id, order_id) {
   const connection = await pool.getConnection();
   try {
-    
-    const result = await connection.execute(
-      "INSERT INTO order_details (quantity,price,product_id,order_id) VALUES (?, ?, ?, ?)",
-      [quantity, price, product_id, order_id]
+    const [idProduct] = await connection.execute(
+      "SELECT COUNT(*) AS count FROM products WHERE id = ?",
+      [product_id]
     );
-    return result;
+    if (idProduct[0].count == 0) {
+      console.log(
+        "\nYou cannot associate an order with a customer that does not exist\n"
+      );
+    } else{
+      const result = await connection.execute(
+        "INSERT INTO order_details (quantity,price,product_id,order_id) VALUES (?, ?, ?, ?)",
+        [quantity, price, product_id, order_id]
+      );
+      return result;
+    }
+   
   } catch (error) {
-    throw error;
+    throw error.message;
   } finally {
     connection.release();
   }
@@ -63,18 +81,11 @@ async function updateOrder(
       "SELECT id FROM purchase_orders WHERE id = ?",
       [id]
     );
-    const [trackRows] = await connection.execute(
-      "SELECT track_number  FROM purchase_orders  WHERE track_number = ?",
-      [track_number]
-    );
    
     if (rows.length === 0) {
       console.log(`La commande avec l'ID ${id} n'existe pas`);
-    }else  if (trackRows.length > 0) {
-      console.log(
-        "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
-      );
-    }else {
+    }
+    else {
       const result = await connection.execute(
         "UPDATE purchase_orders SET date = ?, delivery_address = ? , customer_id = ? , track_number = ?, status = ? WHERE id = ?",
         [date, delivery_address, customer_id, track_number, status, id]
@@ -91,13 +102,12 @@ async function updateOrder(
 }
 
 
-async function getOrderDetailsByOrderId(orderId) {
+async function getOrder() {
   const connection = await pool.getConnection();
-  const result = await connection.execute(
-      "SELECT * FROM order_details WHERE order_id = ?",
-      [orderId]
+  const [result] = await connection.execute(
+      "SELECT * FROM purchase_orders"
   );
-  return result; 
+  console.table(result); 
 }
 
 async function updateOrderDetail(detailId, quantity, price) {
@@ -109,18 +119,31 @@ async function updateOrderDetail(detailId, quantity, price) {
   return result.affectedRows;
 }
 
+async function getOrderDetailsByOrderId(orderId) {
+  const connection = await pool.getConnection();
+  const result = await connection.execute(
+      "SELECT * FROM order_details WHERE order_id = ?",
+      [orderId]
+  );
+  return result; 
+}
 
 async function getOrderById(id) {
   const connection = await pool.getConnection();
   try {
-    const [result] = await connection.execute(
-      "SELECT * FROM purchase_orders INNER JOIN order_details ON purchase_orders.id = order_details.order_id WHERE purchase_orders.id = ?",
+    const [rowsOrder] = await connection.execute(
+      "SELECT * FROM purchase_orders WHERE id = ?",
       [id]
     );
-    if(result.length ===0){
+    const [rowsDetails] = await connection.execute(
+      "SELECT * FROM order_details WHERE order_id = ?",
+      [id]
+    );
+    if(rowsOrder.length ===0){
       console.log(`La commande avec id ${id} n'existe pas`);
     }else{
-      console.table(result) ;
+      console.table(rowsOrder) ;
+      console.table(rowsDetails) ;
     }
   } catch (error) {
     throw error.message;
@@ -184,6 +207,7 @@ module.exports = {
   destroyOrder,
   updateOrderDetails,
   getOrderById,
-  getOrderDetailsByOrderId,
-  updateOrderDetail
+  getOrder,
+  updateOrderDetail,
+  getOrderDetailsByOrderId
 };

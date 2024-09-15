@@ -3,6 +3,7 @@ const productModule = require("./productModule");
 const orderModule = require("./orderModule");
 const paymentModule = require("./paymentModule");
 const readlineSync = require("readline-sync");
+const pool = require("./db");
 
 function mainMenu() {
   console.log("\n***** MENU PRINCIPAL *****");
@@ -41,8 +42,9 @@ function purchaseMenu() {
   console.log("\n***** GESTION DES COMMANDES D'ACHAT *****");
   console.log("1. Ajouter une commande d'achat");
   console.log("2. Mettre à jour les informations d'une commande d'achat");
-  console.log("3. Lister la commande d'achat");
+  console.log("3. Lister la commande d'achat et ses details");
   console.log("4. Supprimer la commande d'achat");
+  console.log("5. Lister la commande d'achat");
   console.log("0. Retourner au menu principal");
   const choice = readlineSync.question("Votre choix: ");
   return choice;
@@ -69,6 +71,7 @@ function detailMenu() {
 
 async function main() {
   try {
+    let connection = await pool.getConnection();
     let mainChoice = mainMenu();
     while (mainChoice !== "0") {
       switch (mainChoice) {
@@ -164,7 +167,7 @@ async function main() {
                 const prices = readlineSync.questionFloat("Entrez le prix : ");
                 const stocks = readlineSync.questionInt("Entre stock : ");
                 const categorys = readlineSync.question("Entre la categorie: ");
-                const borcodes = readlineSync.question("Entre la bar code: ");
+                const borcodes = readlineSync.question("Entre la barcode: ");
                 const statu = readlineSync.question("Entre le status : ");
                 await productModule.updateProduct(
                   productId,
@@ -176,7 +179,7 @@ async function main() {
                   borcodes,
                   statu
                 );
-                
+
                 break;
               case "4":
                 idp = readlineSync.questionInt("Supprimer un produits: ");
@@ -184,7 +187,7 @@ async function main() {
                 await productModule.destroyProduct(idp);
                 break;
               default:
-                console.log("Invalid option");
+                console.log("option invalide");
                 break;
             }
             productChoice = productMenu();
@@ -197,21 +200,63 @@ async function main() {
             switch (purchaseChoice) {
               case "1":
                 let orderId;
-                const orderDate = readlineSync.question(
+                let orderDate = readlineSync.question(
                   "Entrez la date de commande (YYYY-MM-DD): "
                 );
-                const deliveryAddress = readlineSync.question(
+                while (orderDate == "") {
+                  console.log("Veuillez entrer la date de la commande.");
+                  orderDate = readlineSync.question("Entrez la date de commande (YYYY-MM-DD): ");
+                }
+                let deliveryAddress = readlineSync.question(
                   "Entrez l'adresse de livraison: "
                 );
-                const customerId = readlineSync.questionInt(
+                while (deliveryAddress == "") {
+                  console.log("Veuillez entrer l'adresse de la commande.");
+                  deliveryAddress = readlineSync.question(
+                    "Entrez l'adresse de livraison:: "
+                  );
+                }
+                let customerId = readlineSync.questionInt(
                   "Entrez l'ID du client: "
                 );
-                const trackNumber = readlineSync.question(
-                  "Entrez le numéro de suivi: "
+                // let connection = await pool.getConnection();
+                let [rows] = await connection.execute(
+                  "SELECT * FROM customers WHERE id = ?",
+                  [customerId]
                 );
-                const orderStatus = readlineSync.question(
+                while (rows.length == 0) {
+                  console.log(
+                    "L'ID que vous avez entré ne correspond à aucun client. "
+                  );
+                  customerId = readlineSync.questionInt("Enter  customer id: ");
+                  [rows] = await connection.execute(
+                    "SELECT * FROM customers WHERE id = ?",
+                    [customerId]
+                  );
+                }
+
+                let trackNumber = readlineSync.question(
+                  "Entrez le numero de suivi: "
+                );
+                let [rowsTrackNumber] = await connection.execute(
+                  "SELECT * FROM purchase_orders WHERE track_number = ?",
+                  [trackNumber]
+                );
+                while (rowsTrackNumber.length == 0) {
+                  console.log("Veuillez entrer le numéro de suivi de la commande.");
+                  trackNumber = readlineSync.question("Entrez le numéro de suivi: ");
+                  [rowsTrackNumber] = await connection.execute(
+                    "SELECT * FROM purchase_orders WHERE track_number = ?",
+                    [trackNumber]
+                  );
+                }
+                let orderStatus = readlineSync.question(
                   "Entrez le statut de la commande: "
                 );
+                while (orderStatus == "") {
+                  console.log("Veuillez entrer le statut de la commande.");
+                  orderStatus = readlineSync.question("Entrez le statut de la commande: ");
+                }
                 const orderDetail = [];
 
                 let add = true;
@@ -221,15 +266,28 @@ async function main() {
 
                   switch (choix) {
                     case "1":
-                      const produit_id = readlineSync.questionInt(
+                      let produit_id = readlineSync.questionInt(
                         "Entrez l'ID du produit: "
                       );
+                      let [rows] = await connection.execute(
+                        "SELECT * FROM products WHERE id = ?",
+                        [produit_id]
+                      );
+
+                      while (rows.length == 0) {
+                        console.log("L'ID que vous avez entré ne correspond à aucun produit.");
+                        produit_id = readlineSync.questionInt("Entrez l'ID du produit: ");
+                        [rows] = await connection.execute(
+                          "SELECT * FROM products WHERE id = ?",
+                          [produit_id]
+                        );
+                      }
                       const quantity = readlineSync.questionInt(
                         "Entrez une quantité: "
                       );
                       const price =
                         readlineSync.questionFloat("Entrez le prix: ");
-                      
+
                       orderDetail.push({
                         quantity,
                         price,
@@ -274,26 +332,81 @@ async function main() {
                 }
                 break;
               case "2":
-                const updateOrderId = readlineSync.questionInt(
+                let newUpdateOrderId = readlineSync.questionInt(
                   "Entrez l'ID de la commande d'achat à mettre à jour: "
                 );
-                const newOrderDate = readlineSync.question(
-                  "Entrez la nouvelle date de commande (YYYY-MM-DD): "
+                // let connection = await pool.getConnection();
+                let [rowss] = await connection.execute(
+                  "SELECT * FROM purchase_orders WHERE id = ?",
+                  [newUpdateOrderId]
                 );
-                const newDeliveryAddress = readlineSync.question(
-                  "Entrez la nouvelle adresse de livraison: "
+                while (rowss.length == 0) {
+                  console.log("L'ID que vous avez entré ne correspond à aucune commande");
+                  newUpdateOrderId = readlineSync.questionInt("Entrez l'ID de la commande: ");
+                  [rowss] = await connection.execute(
+                    "SELECT * FROM purchase_orders WHERE id = ?",
+                    [newUpdateOrderId]
+                  );
+                }
+                let newOrderDate = readlineSync.question(
+                  "Entrez la date de commande (YYYY-MM-DD): "
                 );
-                const newCustomerId = readlineSync.questionInt(
-                  "Entrez le nouvel ID du client: "
+                while (newOrderDate == "") {
+                  console.log("Veuillez entrer la date de la commande.");
+                  newOrderDate = readlineSync.question("Entrez la date de commande (YYYY-MM-DD): ");
+                }
+                let newDeliveryAddress = readlineSync.question(
+                  "Entrez l'adresse de livraison: "
                 );
-                const newTrackNumber = readlineSync.question(
-                  "Entrez le nouveau numéro de suivi: "
+                while (newDeliveryAddress == "") {
+                  console.log("Veuillez entrer l'adresse de la commande.");
+                  newDeliveryAddress = readlineSync.question(
+                    "Entrez l'adresse de livraison:: "
+                  );
+                }
+                let newCustomerId = readlineSync.questionInt(
+                  "Entrez l'ID du client: "
                 );
-                const newOrderStatus = readlineSync.question(
-                  "Entrez le nouveau statut de la commande: "
+                // let connection = await pool.getConnection();
+                let [row] = await connection.execute(
+                  "SELECT * FROM customers WHERE id = ?",
+                  [newCustomerId]
                 );
+                while (row.length == 0) {
+                  console.log(
+                    "L'ID que vous avez entré ne correspond à aucun client. "
+                  );
+                  newCustomerId = readlineSync.questionInt("Enter  customer id: ");
+                  [row] = await connection.execute(
+                    "SELECT * FROM customers WHERE id = ?",
+                    [newCustomerId]
+                  );
+                }
+
+                let newTrackNumber = readlineSync.question(
+                  "Entrez le numero de suivi: "
+                );
+                let [rowTrackNumber] = await connection.execute(
+                  "SELECT * FROM purchase_orders WHERE track_number = ?",
+                  [newTrackNumber]
+                );
+                while (rowTrackNumber.length === 0) {
+                  console.log("Veuillez entrer le numéro de suivi de la commande.");
+                  newTrackNumber = readlineSync.question("Entrez le numéro de suivi: ");
+                  [rowTrackNumber] = await connection.execute(
+                    "SELECT * FROM purchase_orders WHERE track_number = ?",
+                    [newTrackNumber]
+                  );
+                }
+                let newOrderStatus = readlineSync.question(
+                  "Entrez le statut de la commande: "
+                );
+                while (newOrderStatus == "") {
+                  console.log("Veuillez entrer le statut de la commande.");
+                  newOrderStatus = readlineSync.question("Entrez le statut de la commande: ");
+                }
                 const updateOrderResult = await orderModule.updateOrder(
-                  updateOrderId,
+                  newUpdateOrderId,
                   newOrderDate,
                   newDeliveryAddress,
                   newCustomerId,
@@ -303,7 +416,7 @@ async function main() {
                 console.log(`Number of rows updated: ${updateOrderResult}`);
 
                 const [currentDetails] =
-                  await orderModule.getOrderDetailsByOrderId(updateOrderId);
+                  await orderModule.getOrderDetailsByOrderId(newUpdateOrderId);
                 console.table(currentDetails);
 
                 let modifyDetails = readlineSync.question(
@@ -352,6 +465,9 @@ async function main() {
                 );
                 await orderModule.destroyOrder(deOorderid);
                 break;
+              case "5":
+                await orderModule.getOrder();
+                break;
               default:
                 console.log("Option invalide");
                 break;
@@ -365,18 +481,35 @@ async function main() {
           while (paymentChoice !== "0") {
             switch (paymentChoice) {
               case "1":
-                const paymentDate = readlineSync.question(
+                let paymentDate = readlineSync.question(
                   "Entrez la date de paiement (YYYY-MM-DD): "
                 );
+                while (paymentDate == "") {
+                  console.log("Veuillez Entrez la date du paiement: ");
+                  paymentDate = readlineSync.question("Entrez la date de paiement (YYYY-MM-DD): ");
+                }
                 const amount = readlineSync.questionFloat(
                   "Entrez le montant: "
                 );
                 const paymentMethod = readlineSync.question(
                   "Entrez le mode de paiement: "
                 );
-                const paymentOrderId = readlineSync.questionInt(
+                let paymentOrderId = readlineSync.questionInt(
                   "Entrez l'ID de la commande: "
                 );
+                let [rowsOrderId] = await connection.execute(
+                  "SELECT * FROM purchase_orders WHERE id = ?",
+                  [paymentOrderId]
+                );
+                while (rowsOrderId.length == 0) {
+                  console.log("L'identifiant que vous avez saisi ne correspond à aucune commande");
+                  orderId = readlineSync.questionInt("Entrez l'ID de la commande: ");
+                  [rowsOrderId] = await connection.execute(
+                    "SELECT * FROM purchase_orders WHERE id = ?",
+                    [orderId]
+                  );
+                }
+      
                 const paymentId = await paymentModule.addPayment(
                   paymentDate,
                   amount,
@@ -390,21 +523,49 @@ async function main() {
                 console.log(payments);
                 break;
               case "3":
-                const updatePaymentId = readlineSync.questionInt(
+                let updatePaymentId = readlineSync.questionInt(
                   "Entrez l'ID du paiement à mettre à jour: "
                 );
+                let [rows] = await connection.execute(
+                  "SELECT * FROM payments WHERE id = ?",
+                  [updatePaymentId]
+                );
+                while (rows.length == 0) {
+                  console.log("L'identifiant que vous avez saisi ne correspond à aucun paiement.");
+                  updatePaymentId = readlineSync.questionInt("Entrez l'ID de paiement : ");
+                  [rows] = await connection.execute(
+                    "SELECT * FROM payments WHERE id = ?",
+                    [updatePaymentId]
+                  );
+                }
                 const newPaymentDate = readlineSync.question(
                   "Entrez la nouvelle date de paiement (YYYY-MM-DD): "
                 );
                 const newAmount = readlineSync.questionFloat(
                   "Entrez le nouveau montant: "
                 );
-                const newPaymentMethod = readlineSync.question(
+                let newPaymentMethod = readlineSync.question(
                   "Entrez le nouveau mode de paiement: "
                 );
-                const newOrderId = readlineSync.questionInt(
+                while (newPaymentMethod == "") {
+                  console.log("Veuillez saisir le mode de paiement.");
+                  newPaymentMethod = readlineSync.question("Entrez le mode de paiement: ");
+                }
+                let newOrderId = readlineSync.questionInt(
                   "Entrez le nouvel ID de la commande: "
                 );
+                let [NewRowsOrderId] = await connection.execute(
+                  "SELECT * FROM purchase_orders  WHERE id = ?",
+                  [newOrderId]
+                );
+                while (NewRowsOrderId.length == 0) {
+                  console.log("L'identifiant que vous avez saisi ne correspond à aucune commande.");
+                  newOrderId = readlineSync.questionInt("Entrez le numéro de commande: ");
+                  [NewRowsOrderId] = await connection.execute(
+                    "SELECT * FROM purchase_orders  WHERE id = ?",
+                    [newOrderId]
+                  );
+                }
                 const updatePaymentResult = await paymentModule.updatePayment(
                   updatePaymentId,
                   newPaymentDate,
