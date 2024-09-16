@@ -238,18 +238,18 @@ async function main() {
                 let trackNumber = readlineSync.question(
                   "Entrez le numero de suivi: "
                 );
-                let [rowsTrackNumber] = await connection.execute(
-                  "SELECT * FROM purchase_orders WHERE track_number = ?",
-                  [trackNumber]
-                );
-                while (rowsTrackNumber.length == 0) {
-                  console.log("Veuillez entrer le numéro de suivi de la commande.");
-                  trackNumber = readlineSync.question("Entrez le numéro de suivi: ");
-                  [rowsTrackNumber] = await connection.execute(
-                    "SELECT * FROM purchase_orders WHERE track_number = ?",
-                    [trackNumber]
-                  );
-                }
+                // let [rowsTrackNumber] = await connection.execute(
+                //   "SELECT * FROM purchase_orders WHERE track_number = ?",
+                //   [trackNumber]
+                // );
+                // while (rowsTrackNumber.length == 0) {
+                //   console.log("Veuillez entrer le numéro de suivi de la commande.");
+                //   trackNumber = readlineSync.question("Entrez le numéro de suivi: ");
+                //   [rowsTrackNumber] = await connection.execute(
+                //     "SELECT * FROM purchase_orders WHERE track_number = ?",
+                //     [trackNumber]
+                //   );
+                // }
                 let orderStatus = readlineSync.question(
                   "Entrez le statut de la commande: "
                 );

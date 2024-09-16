@@ -9,22 +9,15 @@ async function addOrder(
 ) {
   const connection = await pool.getConnection();
   try {
-
-    const [trackRows] = await connection.execute(
-      "SELECT track_number  FROM purchase_orders  WHERE track_number = ?",
-      [track_number]
-    );
+   
     const [idCustomer] = await connection.execute(
       "SELECT COUNT(*) AS count FROM customers WHERE id = ?",
       [customer_id]
     );
-    if (trackRows.length > 0) {
+    
+    if (idCustomer[0].count == 0) {
       console.log(
-        "Vous ne pouvez pas attribuer le même numéro de suivi à deux commandes différentes"
-      );
-    }else if (idCustomer[0].count == 0) {
-      console.log(
-        "\nYou cannot associate an order with a customer that does not exist\n"
+        "Vous ne pouvez pas associer une commande à un client qui n'existe pas"
       );
     } else {
       const [orderId] = await connection.execute(
@@ -35,8 +28,8 @@ async function addOrder(
     }
    
   } catch (error) {
-    throw error.message;
-  } finally {
+    console.log("erreur d'insertion", error.message);
+  } finally{
     connection.release();
   }
 }
@@ -159,15 +152,20 @@ async function destroyOrder(id) {
       "SELECT id FROM purchase_orders WHERE id = ?",
       [id]
     );
+    const [rowsPayment] = await connection.execute("SELECT * FROM payments WHERE order_id = ?",[id]);
 
     if (rows.length === 0) {
       console.log(`La commande avec l'ID ${id} n'existe pas`);
+    }else if(rowsPayment.length !== 0){
+      console.log("Vous ne pouvez pas supprimer une commande déja payer")
+    }else{
+      const result = await connection.execute(
+        "DELETE FROM purchase_orders WHERE id = ?",
+        [id]
+      );
+      return result;
     }
-    const result = await connection.execute(
-      "DELETE FROM purchase_orders WHERE id = ?",
-      [id]
-    );
-    return result;
+   
   } catch (error) {
     throw error;
   } finally {
